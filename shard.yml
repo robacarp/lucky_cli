@@ -8,6 +8,10 @@ crystal: 0.35.1
 
 license: MIT
 
+targets:
+  lucky:
+    main: src/lucky.cr
+
 dependencies:
   teeplate:
     github: luckyframework/teeplate

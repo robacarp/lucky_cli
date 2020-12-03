@@ -1,4 +1,5 @@
 require "option_parser"
+require "yaml"
 
 class LuckyCli::Generators::Web
   include LuckyCli::GeneratorHelpers
@@ -31,6 +32,7 @@ class LuckyCli::Generators::Web
   def run
     ensure_directory_does_not_exist
     generate_default_crystal_project
+    override_shard_targets
     add_deps_to_shard_file
     remove_generated_travis_file
     remove_generated_src_files
@@ -146,6 +148,31 @@ class LuckyCli::Generators::Web
       shell: true,
       output: io,
       error: STDERR
+  end
+
+  private def override_shard_targets
+    within_project do
+      shard_yaml = File.open("shard.yml") do |file|
+        YAML.parse(file)
+      end
+
+      new_targets = YAML::Any.new({
+        YAML::Any.new("start_server") => YAML::Any.new({
+          YAML::Any.new("main") => YAML::Any.new("src/start_server.cr")
+        }),
+
+        YAML::Any.new("test") => YAML::Any.new({
+          YAML::Any.new("main") => YAML::Any.new("src/test.cr")
+        })
+      })
+
+      new_shard_yaml = shard_yaml.as_h
+      new_shard_yaml[YAML::Any.new("targets")] = new_targets
+
+      File.open("shard.yml", "w") do |file|
+        YAML.dump shard_yaml, file
+      end
+    end
   end
 
   private def add_deps_to_shard_file
